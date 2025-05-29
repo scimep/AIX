@@ -1,0 +1,27 @@
+---
+title: "Data Preparation"
+format: html
+---
+
+```{r}
+# Load config and package manager
+source("modules/config.R")
+source("modules/package_manager.R")
+```
+
+```{r}
+# Create package manager instance and update/load packages
+pm <- PackageManager$new(config$packages)
+pm$load_packages(update = TRUE)
+```
+
+
+```{r}
+# Load data
+data_raw <- read.csv("data/data_raw.csv")
+
+# Preview data
+head(data_raw)
+```
+
+
