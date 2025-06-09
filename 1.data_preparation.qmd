@@ -3,10 +3,15 @@ title: "Data Preparation"
 format: html
 ---
 
+# Data Preparation
+
+## Load libraries and data
 ```{r}
 # Load config and package manager
+rm(list = ls())
 source("modules/config.R")
 source("modules/package_manager.R")
+source("modules/data_cleaner.R")
 ```
 
 ```{r}
@@ -15,13 +20,61 @@ pm <- PackageManager$new(config$packages)
 pm$load_packages(update = TRUE)
 ```
 
-
 ```{r}
 # Load data
-data_raw <- read.csv("data/data_raw.csv")
-
-# Preview data
-head(data_raw)
+dataRaw <- read.csv("data/data_raw.csv") %>%
+            as.data.frame()
+dim(dataRaw)
 ```
 
+## Data Cleaning
+
+### Clean headers
+```{r}
+# Clean headers
+dataHeaders <- label_headers(dataRaw)
+
+# Preview data
+head(dataHeaders)
+str(dataHeaders)
+write_csv(dataHeaders, path="interim", fname="1.data_headers.csv")
+```
+
+### Simplify timer data
+```{r}
+# Simplify timer data
+dataTimers <- simplify_timer_data(dataHeaders)
+
+head(dataTimers)
+str(dataTimers)
+write_csv(dataTimers, "data/scratch_papers/data_timers.csv")
+```
+
+### Filter valid participants
+```{r}
+# Filter valid participants
+dataValid <- filter_valid_participants(dataTimers)
+
+# Preview data
+head(dataValid)
+str(dataValid)
+dim(dataValid)
+```
+
+### Filter outliers in response time
+
+```{r}
+duration <- dataValid$Duration..in.seconds.
+summary(duration)
+```
+
+```{r}
+# Filter outliers in response time
+dataOutliers <- filter_outliers(dataValid)
+
+# Preview data
+head(dataOutliers)
+str(dataOutliers)
+dim(dataOutliers)
+```
 

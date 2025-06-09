@@ -1,4 +1,10 @@
 # config.R
 config <- list(
-  packages = c("dplyr", "ggplot2")
+  packages = c(
+    "dplyr",
+    "tidyr",
+    "stringr",
+    "haven",
+    "tibble"
+  )
 )
