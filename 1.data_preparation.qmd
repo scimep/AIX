@@ -47,7 +47,7 @@ dataTimers <- simplify_timer_data(dataHeaders)
 
 head(dataTimers)
 str(dataTimers)
-write_csv(dataTimers, "data/scratch_papers/data_timers.csv")
+write_csv(dataTimers, path="interim", fname="2.data_timers.csv")
 ```
 
 ### Filter valid participants
@@ -59,22 +59,68 @@ dataValid <- filter_valid_participants(dataTimers)
 head(dataValid)
 str(dataValid)
 dim(dataValid)
+write_csv(dataValid, path="interim", fname="3.data_valid.csv")
 ```
 
 ### Filter outliers in response time
 
 ```{r}
-duration <- dataValid$Duration..in.seconds.
-summary(duration)
+# Compute MAD of response time
+logDuration <- dataValid %>% 
+               pull(Duration..in.seconds.) %>% 
+               log() 
+madLogDuration <- logDuration %>% mad()
+
+# Define thresholds as vectors
+thresholds <- c(
+  median = median(logDuration),
+  upper = median(logDuration) + 3 * madLogDuration,
+  lower = median(logDuration) - 3 * madLogDuration
+)
+
+# Print thresholds
+cat("Log-transformed thresholds:\n")
+print(thresholds)
+cat("\nExponentiated thresholds:\n")
+print(thresholds |> exp())
 ```
 
 ```{r}
-# Filter outliers in response time
-dataOutliers <- filter_outliers(dataValid)
+# Filter outliers
+dataOutliers <- filter_outliers(dataValid, thresholds)
 
 # Preview data
+summary(dataOutliers$Duration..in.seconds.)
 head(dataOutliers)
 str(dataOutliers)
 dim(dataOutliers)
+write_csv(dataOutliers, path="interim", fname="4.data_outliers.csv")
 ```
+
+### Randomization check
+
+```{r}
+# Check randomization
+check_randomization(dataOutliers)
+check_randomization(dataOutliers, joint = TRUE)
+```
+
+### Remove unnecessary columns
+
+```{r}
+colnames(dataOutliers) <- colnames(dataOutliers) %>%
+               gsub("\\.", "_", x = .) %>%
+               tolower()
+```
+
+```{r}
+dataClean <- dataOutliers %>%
+          subset(select = cols_to_keep)
+
+head(dataClean)
+str(dataClean)
+dim(dataClean)
+write_csv(dataClean, path="interim", fname="5.data_clean.csv")
+```
+
 

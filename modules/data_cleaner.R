@@ -77,19 +77,28 @@ filter_valid_participants <- function(df) {
     as.data.frame()
 }
 
-filter_outliers <- function(df) {
+filter_outliers <- function(df, thresholds) {
   df %>%
-    mutate(
-      First.Click = zap_labels(First.Click) %>% as.numeric(),
-      Last.Click = zap_labels(Last.Click) %>% as.numeric(),
-      Page.Submit = zap_labels(Page.Submit) %>% as.numeric(),
-      Click.Count = zap_labels(Click.Count) %>% as.numeric(),
-      Duration..in.seconds. = zap_labels(Duration..in.seconds.) %>% as.numeric()
-    ) %>%
-    filter(
-      First.Click < 1000,
-      Last.Click < 1000,
-      Page.Submit < 1000,
-      Click.Count < 1000
-    )
+    mutate(logDuration = log(Duration..in.seconds.)) %>%
+    filter(logDuration >= thresholds["lower"] & 
+           logDuration <= thresholds["upper"]) %>%
+    `row.names<-`(NULL)
+}
+
+check_randomization <- function(df, joint = FALSE) {
+  if (joint) {
+    cat("\nJoint chi-square test for all combinations:\n")
+    tbl <- table(paste(df$occupation, df$topic, df$model, df$label, sep = " / "))
+    print(tbl)
+    counts <- as.vector(tbl)
+    print(chisq.test(counts))
+  } else {
+    for (col in c("occupation", "topic", "model", "label")) {
+      cat("\n", col, ":\n")
+      tbl <- table(df[[col]])
+      print(tbl)
+      print(chisq.test(tbl))
+    }
+  }
+  invisible(NULL)
 }
