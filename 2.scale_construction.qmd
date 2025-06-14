@@ -1,0 +1,82 @@
+---
+title: "Data Preparation"
+format: html
+execute:
+  echo: true
+  fig-width: 8
+  fig-height: 6
+  fig-align: "center"
+---
+
+# Data Preparation
+
+## Load libraries and data
+```{r}
+# Load config and package manager
+rm(list = ls())
+source("modules/config.R")
+source("modules/package_manager.R")
+source("modules/data_cleaner.R")
+source("modules/data_explorer.R")
+```
+
+```{r}
+# Create package manager instance and update/load packages
+pm <- PackageManager$new(config$packages)
+pm$load_packages(update = TRUE)
+```
+
+```{r}
+# Load data
+dataLabels <- read_sav("data/interim/5.data_clean.sav") %>%
+  zap_formats() %>%
+  as.data.frame()
+
+# Preview data
+get_label(dataLabels, "techphi_enth")
+```
+
+## Construct Definitions
+
+### Independent Variables
+
+#### Technophilia
+
+```{r}
+# Reliability analysis
+techphi_full <- c("techphi_enth", "techphi_dep", "techphi_techrep", "techphi_eou")
+alpha(dataLabels[, techphi_full])
+
+# Factor analysis
+techphi_fa <- fa(dataLabels[, techphi_full], nfactors = 1)
+print(techphi_fa, sort = TRUE)
+
+# Correlation matrix
+techphi_cor <- cor(dataLabels[, techphi_full])
+print(techphi_cor)
+```
+
+```{r}
+# CFA using lavaan
+techphi_reduced <- c("techphi_enth", "techphi_dep", "techphi_eou")
+alpha(dataLabels[, techphi_reduced])
+
+# Factor analysis
+techphi_fa <- fa(dataLabels[, techphi_reduced], nfactors = 1)
+print(techphi_fa, sort = TRUE)
+
+# Correlation matrix
+techphi_cor <- cor(dataLabels[, techphi_reduced])
+print(techphi_cor)
+```
+
+#### Expectancy
+
+#### Emotions
+
+#### Willingness to Engage
+
+#### Acceptance of GenAI
+
+#### Support for GenAI Regulation
+

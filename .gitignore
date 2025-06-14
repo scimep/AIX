@@ -1,0 +1,4 @@
+# Exclude specific files
+.vdoc.f3d49963-44c0-4005-af4a-d12507ee675a.r
+renv.lock
+data/scratch_papers/ 

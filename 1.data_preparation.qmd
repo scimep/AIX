@@ -1,0 +1,132 @@
+---
+title: "Data Preparation"
+format: html
+---
+
+# Data Preparation
+
+## Load libraries and data
+```{r}
+# Load config and package manager
+rm(list = ls())
+source("modules/config.R")
+source("modules/package_manager.R")
+source("modules/data_cleaner.R")
+```
+
+```{r}
+# Create package manager instance and update/load packages
+pm <- PackageManager$new(config$packages)
+pm$load_packages(update = TRUE)
+```
+
+```{r}
+# Load data
+dataRaw <- read.csv("data/data_raw.csv") %>%
+            as.data.frame()
+dim(dataRaw)
+```
+
+```{r}
+# Clean column names
+colnames(dataRaw) <- colnames(dataRaw) %>%
+               gsub("\\.", "_", x = .) %>%
+               tolower()
+```
+
+## Data Cleaning
+
+### Clean headers
+```{r}
+# Clean headers
+dataHeaders <- label_headers(dataRaw)
+
+# Preview data
+head(dataHeaders)
+str(dataHeaders)
+save_data(dataHeaders, path="interim", fname="1.data_headers", extension="csv")
+save_data(dataHeaders, path="interim", fname="1.data_headers", extension="sav")
+```
+
+### Simplify timer data
+```{r}
+# Simplify timer data
+dataTimers <- simplify_timer_data(dataHeaders)
+
+head(dataTimers)
+str(dataTimers)
+save_data(dataTimers, path="interim", fname="2.data_timers", extension="csv")
+save_data(dataTimers, path="interim", fname="2.data_timers", extension="sav")
+```
+
+### Filter valid participants
+```{r}
+# Filter valid participants
+dataValid <- filter_valid_participants(dataTimers)
+
+# Preview data
+head(dataValid)
+str(dataValid)
+dim(dataValid)
+save_data(dataValid, path="interim", fname="3.data_valid", extension="csv")
+save_data(dataValid, path="interim", fname="3.data_valid", extension="sav")
+```
+
+### Filter outliers in response time
+
+```{r}
+# Compute MAD of response time
+logDuration <- dataValid %>% 
+               pull(duration__in_seconds_) %>% 
+               log() 
+madLogDuration <- logDuration %>% mad()
+
+# Define thresholds as vectors
+thresholds <- c(
+  median = median(logDuration),
+  upper = median(logDuration) + 3 * madLogDuration,
+  lower = median(logDuration) - 3 * madLogDuration
+)
+
+# Print thresholds
+cat("Log-transformed thresholds:\n")
+print(thresholds)
+cat("\nExponentiated thresholds:\n")
+print(thresholds |> exp())
+```
+
+```{r}
+# Filter outliers
+dataOutliers <- filter_outliers(dataValid, thresholds)
+
+# Preview data
+summary(dataOutliers$duration__in_seconds_)
+head(dataOutliers)
+str(dataOutliers)
+dim(dataOutliers)
+save_data(dataOutliers, path="interim", fname="4.data_outliers", extension="csv")
+save_data(dataOutliers, path="interim", fname="4.data_outliers", extension="sav")
+```
+
+### Randomization check
+
+```{r}
+# Check randomization
+check_randomization(dataOutliers)
+check_randomization(dataOutliers, joint = TRUE)
+```
+
+### Remove unnecessary columns
+
+```{r}
+dataClean <- dataOutliers %>%
+          subset(select = colsToKeep)
+
+head(dataClean)
+str(dataClean)
+dim(dataClean)
+save_data(dataClean, path="interim", fname="5.data_clean", extension="csv")
+save_data(dataClean, path="interim", fname="5.data_clean", extension="sav")
+```
+
+
